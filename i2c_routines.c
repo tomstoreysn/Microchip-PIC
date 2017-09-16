@@ -67,7 +67,7 @@ i2c_setup(void)
      * This produces a baud rate of ~380KHz. A value of 8 gives ~420KHz.
      */
     
-    SSP1ADD = 14;
+    SSP1ADD = 8;
 #elif __PIC24E__
     PMD1bits.I2C1MD = PERIPH_ON; /* Enable I2C1 peripheral */
     
@@ -92,7 +92,7 @@ i2c_setup(void)
      * 
      * ((1 / 400000 - 0.000000120) * 86000000) - 2 = 202
      * 
-     * This produces a baud rate of ~375KHz.
+     * This produces a baud rate of ~375KHz. 190 is much closer to 400KHz.
      */
     I2C1BRG = 190;
     
@@ -113,8 +113,7 @@ i2c_master_wait(void)
      * TRSTAT (PIC24) bit LOW = no TX in progress; and
      * SEN, RSEN, PEN, RCEN, ACKEN bits LOW
      */
-    
-    uint8_t timeout = 255;
+     uint8_t timeout = 255;
     
 #ifdef _PIC18
     while ((SSP1STATbits.R_nW || SSP1STATbits.BF || SSP1CON2 & 0x1F) && 
@@ -137,7 +136,6 @@ i2c_interrupt_wait(void)
     /*
      * Wait for an I2C sourced interrupt to occur.
      */
-    
     uint8_t timeout = 255;
     
 #ifdef _PIC18
@@ -374,7 +372,6 @@ i2c_eeprom_read(uint8_t cs, uint16_t addr, uint8_t adsz, uint16_t len,
      *     len: number of bytes to read
      *     *dest: pointer to where first received byte is stored
      */
-    
     uint8_t sm_run = TRUE;
     uint16_t ctr = 0;
     i2c_status_t status = I2C_OK;
@@ -461,7 +458,6 @@ i2c_eeprom_write(uint8_t cs, uint16_t addr, uint8_t adsz, uint16_t len,
      *     len: number of bytes to write
      *     *src: pointer to where first byte is stored
      */
-    
     uint8_t sm_run = TRUE;
     uint16_t ctr = 0;
     i2c_status_t status = I2C_OK;
@@ -528,7 +524,6 @@ i2c_eeprom_ack_poll(uint8_t cs)
      * Args:
      *     cs: 3 bits matching slave chip select bits
      */
-    
     uint8_t sm_run = TRUE;
     i2c_status_t status = I2C_OK;
     i2c_sm_state_t i2c_sm_state = I2C_SM_START;
