@@ -36,19 +36,19 @@ void
 i2c_setup(void)
 {
 #ifdef _PIC18
-    PMD1bits.MSSP1MD = PERIPH_ON; /* Enable MSSP1 peripheral */
+    PMD1bits.MSSP1MD = PERIPH_ON;   /* Enable MSSP1 peripheral */
     
     SSP1CON1 = 0;
-    SSP1CON1bits.SSPEN = TRUE;  /* I2C enabled */
-    SSP1CON1 |= 0x08;           /* I2C master mode */
+    SSP1CON1bits.SSPEN = TRUE;      /* I2C enabled */
+    SSP1CON1 |= 0x08;               /* I2C master mode */
     
     SSP1CON3 = 0;
-    SSP1CON3bits.SCIE = TRUE;   /* Enable interrupts for start and stop */
-    SSP1CON3bits.PCIE = TRUE;   /* condition completion */
-    PIE1bits.SSP1IE = FALSE;    /* Branch to ISR on interrupt? */
+    SSP1CON3bits.SCIE = TRUE;       /* Enable interrupts for start and stop */
+    SSP1CON3bits.PCIE = TRUE;       /* condition completion */
+    PIE1bits.SSP1IE = FALSE;        /* Branch to ISR on interrupt? */
     
-    SSP1STATbits.SMP = TRUE;    /* Slew rate control disabled */
-    SSP1STATbits.CKE = TRUE;    /* SMbus compliancy enabled */
+    SSP1STATbits.SMP = TRUE;        /* Slew rate control disabled */
+    SSP1STATbits.CKE = TRUE;        /* SMbus compliancy enabled */
     
     /*
      * Approximate baud rate can be calculated with this formula:
@@ -69,13 +69,13 @@ i2c_setup(void)
     
     SSP1ADD = 14;
 #elif __PIC24E__
-    PMD1bits.I2C1MD = PERIPH_ON; /* Enable I2C1 peripheral */
+    PMD1bits.I2C1MD = PERIPH_ON;    /* Enable I2C1 peripheral */
     
     I2C1CON = 0;
-    I2C1CONbits.DISSLW = TRUE;  /* Slew rate control disabled */
-    I2C1CONbits.SMEN = TRUE;    /* SMbus compliancy enabled */
+    I2C1CONbits.DISSLW = TRUE;      /* Slew rate control disabled */
+    I2C1CONbits.SMEN = TRUE;        /* SMbus compliancy enabled */
     
-    IEC1bits.MI2C1IE = FALSE;   /* Branch to ISR on interrupt? */
+    IEC1bits.MI2C1IE = FALSE;       /* Branch to ISR on interrupt? */
     
     /*
      * Approximate baud rate can be calculated with this formula:
@@ -96,7 +96,7 @@ i2c_setup(void)
      */
     I2C1BRG = 190;
     
-    I2C1CONbits.I2CEN = TRUE;   /* I2C enabled */
+    I2C1CONbits.I2CEN = TRUE;       /* I2C enabled */
 #else
     #error "I2C routines have not been tested on the target PIC device/family"
 #endif
@@ -113,20 +113,21 @@ i2c_master_wait(void)
      * TRSTAT (PIC24) bit LOW = no TX in progress; and
      * SEN, RSEN, PEN, RCEN, ACKEN bits LOW
      */
-    
     uint8_t timeout = 255;
     
 #ifdef _PIC18
     while ((SSP1STATbits.R_nW || SSP1STATbits.BF || SSP1CON2 & 0x1F) && 
-            timeout)
+            timeout) {
 #elif __PIC24E__
     while ((I2C1STATbits.R_W || I2C1STATbits.RBF || I2C1STATbits.TBF ||
-            I2C1STATbits.TRSTAT || I2C1CON & 0x1F) && timeout)
+            I2C1STATbits.TRSTAT || I2C1CON & 0x1F) && timeout) {
 #endif
         timeout--;
+    }
         
-    if (timeout == 0) 
+    if (timeout == 0) {
         return I2C_ERR_NOT_RDY;
+    }
     
     return I2C_OK;
 }
@@ -137,17 +138,18 @@ i2c_interrupt_wait(void)
     /*
      * Wait for an I2C sourced interrupt to occur.
      */
-    
     uint8_t timeout = 255;
     
 #ifdef _PIC18
-    while (PIR1bits.SSP1IF == FALSE && PIR2bits.BCL1IF == FALSE && timeout)
+    while (PIR1bits.SSP1IF == FALSE && PIR2bits.BCL1IF == FALSE && timeout) {
         timeout--;
+    }
     
     PIR1bits.SSP1IF = FALSE;
     
-    if (timeout == 0)
+    if (timeout == 0) {
         return I2C_ERR_INT_TIMEOUT;
+    }
     
     if (PIR2bits.BCL1IF) {
         PIR2bits.BCL1IF = FALSE;
@@ -156,13 +158,15 @@ i2c_interrupt_wait(void)
     
     PIR1bits.SSP1IF = FALSE;
 #elif __PIC24E__
-    while (IFS1bits.MI2C1IF == FALSE && I2C1STATbits.BCL == FALSE && timeout)
+    while (IFS1bits.MI2C1IF == FALSE && I2C1STATbits.BCL == FALSE && timeout) {
         timeout--;
+    }
     
     IFS1bits.MI2C1IF = FALSE;
     
-    if (timeout == 0)
+    if (timeout == 0) {
         return I2C_ERR_INT_TIMEOUT;
+    }
     
     if (I2C1STATbits.BCL) {
         I2C1STATbits.BCL = FALSE;
@@ -184,8 +188,9 @@ i2c_start(uint8_t sen_rsen)
      */
     i2c_status_t status = i2c_master_wait();
     
-    if (status)
+    if (status) {
         return status;
+    }
     
     sen_rsen &= 0x1;
 #ifdef _PIC18
@@ -205,8 +210,9 @@ i2c_stop(void)
      */
     i2c_status_t status = i2c_master_wait();
     
-    if (status)
+    if (status) {
         return status;
+    }
     
 #ifdef _PIC18
     SSP1CON2bits.PEN = TRUE;
@@ -228,43 +234,52 @@ i2c_write(char_t byte)
      */
     i2c_status_t status = i2c_master_wait();
     
-    if (status)
+    if (status) {
         return status;
+    }
     
     uint8_t timeout = 255;
     
 #ifdef _PIC18
     SSP1BUF = byte;
     
-    if (SSP1CON1bits.WCOL)
+    if (SSP1CON1bits.WCOL) {
         return I2C_ERR_WCOL;
+    }
     
-    while (SSP1STATbits.BF && timeout)
+    while (SSP1STATbits.BF && timeout) {
         timeout--;
+    }
         
-    if (timeout == 0)
+    if (timeout == 0) {
         return I2C_ERR_TX_TIMEOUT;
+    }
     
     status = i2c_interrupt_wait();
     
-    if (SSP1CON2bits.ACKSTAT)
+    if (SSP1CON2bits.ACKSTAT) {
         return I2C_ERR_NAK;
+    }
 #elif __PIC24E__
     I2C1TRN = byte;
     
-    if (I2C1STATbits.IWCOL)
+    if (I2C1STATbits.IWCOL) {
         return I2C_ERR_WCOL;
+    }
     
-    while (I2C1STATbits.TBF && I2C1STATbits.TRSTAT && timeout)
+    while (I2C1STATbits.TBF && I2C1STATbits.TRSTAT && timeout) {
         timeout--;
+    }
     
-    if (timeout == 0)
+    if (timeout == 0) {
         return I2C_ERR_TX_TIMEOUT;
+    }
     
     status = i2c_interrupt_wait();
     
-    if (I2C1STATbits.ACKSTAT)
+    if (I2C1STATbits.ACKSTAT) {
         return I2C_ERR_NAK;
+    }
 #endif
     
     return status;
@@ -281,39 +296,46 @@ i2c_read(char_t *dest)
      */
     i2c_status_t status = i2c_master_wait();
     
-    if (status)
+    if (status) {
         return status;
+    }
     
     uint8_t timeout = 255;
     
 #ifdef _PIC18
     SSP1CON2bits.RCEN = TRUE;
     
-    while (SSP1STATbits.BF == FALSE && SSP1CON2bits.RCEN && timeout)
+    while (SSP1STATbits.BF == FALSE && SSP1CON2bits.RCEN && timeout) {
         timeout--;
+    }
     
-    if (timeout == 0)
+    if (timeout == 0) {
         return I2C_ERR_RX_TIMEOUT;
+    }
     
     status = i2c_interrupt_wait();
     *dest = SSP1BUF;
     
-    if (SSP1CON1bits.SSPOV)
+    if (SSP1CON1bits.SSPOV) {
         return I2C_ERR_OV;
+    }
 #elif __PIC24E__
     I2C1CONbits.RCEN = TRUE;
     
-    while (I2C1STATbits.RBF == FALSE && I2C1CONbits.RCEN && timeout)
+    while (I2C1STATbits.RBF == FALSE && I2C1CONbits.RCEN && timeout) {
         timeout--;
+    }
     
-    if (timeout == 0)
+    if (timeout == 0) {
         return I2C_ERR_RX_TIMEOUT;
+    }
     
     status = i2c_interrupt_wait();
     *dest = I2C1RCV;
     
-    if (I2C1STATbits.I2COV)
+    if (I2C1STATbits.I2COV) {
         return I2C_ERR_OV;
+    }
 #endif
     
     return status;
@@ -374,7 +396,6 @@ i2c_eeprom_read(uint8_t cs, uint16_t addr, uint8_t adsz, uint16_t len,
      *     len: number of bytes to read
      *     *dest: pointer to where first received byte is stored
      */
-    
     uint8_t sm_run = TRUE;
     uint16_t ctr = 0;
     i2c_status_t status = I2C_OK;
@@ -422,17 +443,20 @@ i2c_eeprom_read(uint8_t cs, uint16_t addr, uint8_t adsz, uint16_t len,
                 while (ctr < len) {
                     status = i2c_read(dest + ctr);
 
-                    if (status)
+                    if (status) {
                         break;
+                    }
 
                     ctr++;
                     
-                    if (ctr < len)
+                    if (ctr < len) {
                         i2c_ack(I2C_ACK);
+                    }
                 }
                 
-                if (status == I2C_OK)
+                if (status == I2C_OK) {
                     i2c_ack(I2C_NAK);
+                }
                 
                 i2c_sm_state = I2C_SM_STOP;
                 break;
@@ -461,9 +485,9 @@ i2c_eeprom_write(uint8_t cs, uint16_t addr, uint8_t adsz, uint16_t len,
      *     len: number of bytes to write
      *     *src: pointer to where first byte is stored
      */
-    
     uint8_t sm_run = TRUE;
     uint16_t ctr = 0;
+    uint8_t timeout = 255;
     i2c_status_t status = I2C_OK;
     i2c_sm_state_t i2c_sm_state = I2C_SM_START;
     
@@ -475,8 +499,17 @@ i2c_eeprom_write(uint8_t cs, uint16_t addr, uint8_t adsz, uint16_t len,
                 break;
                 
             case I2C_SM_CTRL_WD:
-                status = i2c_eeprom_ctrl_word(0xA, cs, I2C_WR);
-                    
+                status = I2C_ERR_NAK;
+                
+                while (status == I2C_ERR_NAK && timeout) {
+                    status = i2c_eeprom_ctrl_word(0xA, cs, I2C_WR);
+                    timeout--;
+                }
+                
+                if (timeout == 0) {
+                    return I2C_ERR_NOT_RDY;
+                }
+                
                 if (adsz) {
                     i2c_sm_state = I2C_SM_ADDR_LO;
                 } else {
@@ -501,8 +534,9 @@ i2c_eeprom_write(uint8_t cs, uint16_t addr, uint8_t adsz, uint16_t len,
 
                     ctr++;
 
-                    if (status)
+                    if (status) {
                         break;
+                    }
                 }
                 
                 i2c_sm_state = I2C_SM_STOP;
@@ -528,7 +562,6 @@ i2c_eeprom_ack_poll(uint8_t cs)
      * Args:
      *     cs: 3 bits matching slave chip select bits
      */
-    
     uint8_t sm_run = TRUE;
     i2c_status_t status = I2C_OK;
     i2c_sm_state_t i2c_sm_state = I2C_SM_START;
