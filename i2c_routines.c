@@ -67,7 +67,7 @@ i2c_setup(void)
      * This produces a baud rate of ~380KHz. A value of 8 gives ~420KHz.
      */
     
-    SSP1ADD = 8;
+    SSP1ADD = 14;
 #elif __PIC24E__
     PMD1bits.I2C1MD = PERIPH_ON;    /* Enable I2C1 peripheral */
     
@@ -92,7 +92,7 @@ i2c_setup(void)
      * 
      * ((1 / 400000 - 0.000000120) * 86000000) - 2 = 202
      * 
-     * This produces a baud rate of ~375KHz. 190 is much closer to 400KHz.
+     * This produces a baud rate of ~375KHz.
      */
     I2C1BRG = 190;
     
